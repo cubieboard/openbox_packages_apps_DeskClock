@@ -231,6 +231,10 @@ public class Alarms {
             // have the modified alarm fire next.
             clearSnoozeIfNeeded(context, timeInMillis);
         }
+        else
+		{
+			disableSnoozeAlert(context, alarm.id);
+		}
 
         setNextAlert(context);
 
@@ -375,12 +379,28 @@ public class Alarms {
      * the user changes alarm settings.  Activates snooze if set,
      * otherwise loads all alarms, activates next alert.
      */
-    public static void setNextAlert(final Context context) {
+    public static void setNextAlert(final Context context)
+    {
         final Alarm alarm = calculateNextAlert(context);
-        if (alarm != null) {
+		
+		SharedPreferences prefs = context.getSharedPreferences(
+                AlarmClock.PREFERENCES, 0);        
+        if ((alarm != null && alarm.enabled) || (alarm != null && hasAlarmBeenSnoozed(prefs, alarm.id)))
+        {
             enableAlert(context, alarm, alarm.time);
-        } else {
-            disableAlert(context);
+        }
+		else
+        {
+			if(alarm == null)
+			{
+				Alarm endalarm = new Alarm();
+				enableAlert(context, endalarm, System.currentTimeMillis() + 8640000000L);
+			}
+			else
+			{
+				enableAlert(context, alarm, System.currentTimeMillis() + 8640000000L);
+			}
+			disableAlert(context);
         }
     }
 
@@ -419,7 +439,7 @@ public class Alarms {
         PendingIntent sender = PendingIntent.getBroadcast(
                 context, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 
-        am.set(AlarmManager.RTC_WAKEUP, atTimeInMillis, sender);
+        am.set(AlarmManager.RTC_SHUTDOWN_WAKEUP, atTimeInMillis, sender);
 
         setStatusBarIcon(context, true);
 
